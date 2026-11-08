@@ -439,7 +439,7 @@ void videoChangedCallback(CFNotificationCenterRef center, void * observer, CFStr
 
 	// Listen for respring requests from pref.
 	CFNotificationCenterRef center = CFNotificationCenterGetDarwinNotifyCenter();
-	CFNotificationCenterAddObserver(center, nil, videoChangedCallback, CFSTR("com.zx02.frame.videoChanged"), nil, nil);
+	CFNotificationCenterAddObserver(center, NULL, videoChangedCallback, CFSTR("com.zx02.frame.videoChanged"), NULL, CFNotificationSuspensionBehaviorDeliverImmediately);
 
 	dlopen("/var/jb/Library/LookinServer.framework/LookinServer", RTLD_NOW);
 	// log error if any
