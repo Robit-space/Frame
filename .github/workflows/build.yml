@@ -48,13 +48,14 @@ jobs:
       - name: List FrameApp build schemes
         working-directory: frameapp-src
         run: |
-          xcodebuild -list -workspace Frame.xcworkspace
+          test -f FrameApp.xcworkspace/contents.xcworkspacedata
+          xcodebuild -list -workspace FrameApp.xcworkspace
 
       - name: Build FrameApp
         working-directory: frameapp-src
         run: |
           xcodebuild \
-            -workspace Frame.xcworkspace \
+            -workspace FrameApp.xcworkspace \
             -scheme FrameApp \
             -configuration Release \
             -sdk iphoneos \
