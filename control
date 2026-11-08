@@ -2,7 +2,7 @@ Package: com.zx02.frame.rootless
 Name: Frame (Rootless iOS 14+)
 Architecture: iphoneos-arm64
 Depends: mobilesubstrate,firmware (>= 13.9.9)
-Conflicts: com.zx02.frame.ios13 com.zx02.frame.ios14
+Conflicts: com.zx02.frame.ios13, com.zx02.frame.ios14
 Version: 3.0.1
 Description: Bring your iDevice to life with true video wallpapers.
 Maintainer: Zerui Chen
