@@ -35,6 +35,11 @@ jobs:
           git apply "$RUNNER_TEMP/frameapp.patch"
           test -f Frame.xcworkspace/contents.xcworkspacedata
 
+      - name: Fix FrameApp CocoaPods target
+        working-directory: frameapp-src
+        run: |
+          sed -i '' "s/target 'Frame' do/target 'FrameApp' do/" Podfile
+
       - name: Install FrameApp dependencies
         working-directory: frameapp-src
         run: |
