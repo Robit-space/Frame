@@ -1,0 +1,64 @@
+
+name: Frame Rootless Build
+
+on:
+  push:
+    branches:
+      - v3
+      - "fix/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-14
+
+    steps:
+      - name: Checkout Frame
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          brew install make dpkg ldid xz
+
+      - name: Checkout Theos
+        uses: actions/checkout@v4
+        with:
+          repository: theos/theos
+          ref: 8167f59de02fd32cf45b16bfcb1330dfa5c9974c
+          path: theos
+
+      - name: Checkout iOS SDKs
+        uses: actions/checkout@v4
+        with:
+          repository: xybp888/iOS-SDKs
+          ref: 4a48e5409f8ea6ac422c44d91b86fa0f8ae010ff
+          path: sdk-source
+
+      - name: Prepare SDK
+        run: |
+          mkdir -p theos/sdks
+          cp -R sdk-source/iPhoneOS15.5.sdk theos/sdks/
+
+      - name: Build Rootless package
+        env:
+          THEOS: ${{ github.workspace }}/theos
+        run: |
+          make package FINALPACKAGE=1 \
+            THEOS="$THEOS" \
+            SYSROOT="$THEOS/sdks/iPhoneOS15.5.sdk"
+
+      - name: Verify package
+        run: |
+          find packages -name "*.deb" -type f
+          test -n "$(find packages -name '*.deb' -type f)"
+
+      - name: Upload DEB
+        uses: actions/upload-artifact@v4
+        with:
+          name: Frame-Rootless-iOS
+          path: packages/*.deb
+          if-no-files-found: error
+          retention-days: 14
