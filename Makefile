@@ -10,7 +10,7 @@ ifeq ($(SIM), 1)
 else
 	TARGET = iphone:clang:latest:14.0
 	ARCHS = arm64 arm64e
-	SYSROOT = /Users/zeruichen/theos/sdks/iPhoneOS13.7.sdk
+	SYSROOT = $(THEOS)/sdks/iPhoneOS15.5.sdk
 endif
 
 # iPhone

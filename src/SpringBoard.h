@@ -12,6 +12,8 @@
 // Class decls.
 @interface SBFWallpaperView : UIView
 @property UIView *contentView;
+@property (nonatomic, copy, readonly) NSString *variantCacheIdentifier;
+- (void)setGeneratesBlurredImages:(BOOL)value;
 @end
 
 DEF_UIVIEW(SBIconScrollView)

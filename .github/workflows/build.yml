@@ -1,0 +1,124 @@
+name: Frame Rootless Build
+
+on:
+  push:
+    branches:
+      - v3
+      - "fix/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - name: Checkout Frame
+        uses: actions/checkout@v4
+
+      - name: Checkout pinned FrameApp source
+        uses: actions/checkout@v4
+        with:
+          repository: Zerui18/FrameApp
+          ref: c673963dd6b2d6852096a4b396a624169383ef20
+          path: frameapp-src
+
+      - name: Install build dependencies
+        run: |
+          brew install make dpkg ldid xz cocoapods
+
+      - name: Apply FrameApp Chinese localization patch
+        run: |
+          cd frameapp-src
+          base64 -D -i ../ci/frameapp.patch.b64 -o "$RUNNER_TEMP/frameapp.patch"
+          git apply "$RUNNER_TEMP/frameapp.patch"
+          test -f Frame.xcworkspace/contents.xcworkspacedata
+
+      - name: Install FrameApp dependencies
+        working-directory: frameapp-src
+        run: |
+          pod install --repo-update
+
+      - name: List FrameApp build schemes
+        working-directory: frameapp-src
+        run: |
+          xcodebuild -list -workspace Frame.xcworkspace
+
+      - name: Build FrameApp
+        working-directory: frameapp-src
+        run: |
+          xcodebuild \
+            -workspace Frame.xcworkspace \
+            -scheme FrameApp \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath "$RUNNER_TEMP/FrameAppDerived" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build
+
+      - name: Replace bundled FrameApp
+        run: |
+          PRODUCTS="$RUNNER_TEMP/FrameAppDerived/Build/Products/Release-iphoneos"
+          APP="$PRODUCTS/FrameApp.app"
+
+          test -d "$APP"
+          test -f "$APP/Info.plist"
+
+          EXECUTABLE=$(/usr/libexec/PlistBuddy \
+            -c 'Print :CFBundleExecutable' "$APP/Info.plist")
+
+          test -n "$EXECUTABLE"
+          test -f "$APP/$EXECUTABLE"
+
+          rm -rf layout/var/jb/Applications/FrameApp.app
+          mkdir -p layout/var/jb/Applications
+
+          ditto "$APP" layout/var/jb/Applications/FrameApp.app
+
+          rm -rf layout/var/jb/Applications/FrameApp.app/_CodeSignature
+          rm -f layout/var/jb/Applications/FrameApp.app/embedded.mobileprovision
+
+          ldid -Sframeapp-src/FrameApp/FrameApp_.entitlements \
+            "layout/var/jb/Applications/FrameApp.app/$EXECUTABLE"
+      - name: Checkout Theos
+        uses: actions/checkout@v4
+        with:
+          repository: theos/theos
+          ref: 8167f59de02fd32cf45b16bfcb1330dfa5c9974c
+          path: theos
+
+      - name: Checkout iOS SDKs
+        uses: actions/checkout@v4
+        with:
+          repository: xybp888/iOS-SDKs
+          ref: 4a48e5409f8ea6ac422c44d91b86fa0f8ae010ff
+          path: sdk-source
+
+      - name: Prepare SDK
+        run: |
+          mkdir -p theos/sdks
+          cp -R sdk-source/iPhoneOS15.5.sdk theos/sdks/
+
+      - name: Build Rootless package
+        env:
+          THEOS: ${{ github.workspace }}/theos
+        run: |
+          gmake package FINALPACKAGE=1 \
+            THEOS="$THEOS" \
+            SYSROOT="$THEOS/sdks/iPhoneOS15.5.sdk"
+
+      - name: Verify package
+        run: |
+          find packages -name "*.deb" -type f
+          test -n "$(find packages -name '*.deb' -type f)"
+
+      - name: Upload DEB
+        uses: actions/upload-artifact@v4
+        with:
+          name: Frame-Rootless-iOS
+          path: packages/*.deb
+          if-no-files-found: error
+          retention-days: 14

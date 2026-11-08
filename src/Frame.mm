@@ -29,11 +29,16 @@ void cancelCountdown(); // cancel home screen fade countdown (see Tweak.xm)
 
         NSLog(@"[Frame] Hello from Frame! Begin initialization...");
 
-        // get user defaults & set default values
+        // Get user defaults. Migrate the old key before registerDefaults,
+        // otherwise the registered default can hide whether a stored value exists.
         bundleDefaults = [[NSUserDefaults alloc] initWithSuiteName: @"com.Zerui.framepreferences"];
+        if ([bundleDefaults objectForKey: @"disabledOnLPM"] == nil &&
+            [bundleDefaults objectForKey: @"disableOnLPM"] != nil) {
+            [bundleDefaults setBool: [bundleDefaults boolForKey: @"disableOnLPM"] forKey: @"disabledOnLPM"];
+        }
         [bundleDefaults registerDefaults: @{
                                             @"isEnabled" : @true,
-                                            @"disableOnLPM" : @true,
+                                            @"disabledOnLPM" : @true,
                                             @"lockscreen/isMuted" : @true,
                                             @"homescreen/isMuted" : @true,
                                             @"pauseInApps" : @true,
@@ -51,7 +56,7 @@ void cancelCountdown(); // cancel home screen fade countdown (see Tweak.xm)
         [audioSession setCategory: AVAudioSessionCategoryPlayback withOptions: AVAudioSessionCategoryOptionMixWithOthers error: nil];
         [audioSession addObserver: self forKeyPath: @"outputVolume" options: NSKeyValueObservingOptionNew context: nil];
 
-        disableOnLPM = [bundleDefaults boolForKey: @"disableOnLPM"];
+        disableOnLPM = [bundleDefaults boolForKey: @"disabledOnLPM"];
         self.pauseInApps = [bundleDefaults boolForKey: @"pauseInApps"];
         syncRingerVolume = [bundleDefaults boolForKey: @"syncRingerVolume"];
         self.fadeEnabled = [bundleDefaults boolForKey: @"fadeEnabled"];
@@ -65,7 +70,7 @@ void cancelCountdown(); // cancel home screen fade countdown (see Tweak.xm)
 
         // begin observing settings changes
         KVC_OBSERVE(@"isEnabled");
-        KVC_OBSERVE(@"disableOnLPM");
+        KVC_OBSERVE(@"disabledOnLPM");
         KVC_OBSERVE(@"pauseInApps");
         KVC_OBSERVE(@"syncRingerVolume");
         KVC_OBSERVE(@"fadeEnabled");
@@ -97,7 +102,7 @@ void cancelCountdown(); // cancel home screen fade countdown (see Tweak.xm)
     // Helper function to check if tweak should be active based on isEnabled and disableOnLPM.
     - (bool) isTweakEnabled {
         bool enabled = [bundleDefaults boolForKey: @"isEnabled"];
-        if ([bundleDefaults boolForKey: @"disableOnLPM"]) {
+        if ([bundleDefaults boolForKey: @"disabledOnLPM"]) {
             enabled = enabled && !NSProcessInfo.processInfo.isLowPowerModeEnabled;
         }
         return enabled;
@@ -178,7 +183,7 @@ void cancelCountdown(); // cancel home screen fade countdown (see Tweak.xm)
 
         IF_KEYPATH(@"isEnabled", self.enabled = self.isTweakEnabled; self.enabled = self.isTweakEnabled;)
 
-        ELIF_KEYPATH(@"disableOnLPM", disableOnLPM = changeInBool;)
+        ELIF_KEYPATH(@"disabledOnLPM", disableOnLPM = changeInBool; self.enabled = self.isTweakEnabled;)
 
         ELIF_KEYPATH(@"lockscreen/isMuted", mutedLockscreen = lockscreenPlayer.muted = changeInBool;)
 

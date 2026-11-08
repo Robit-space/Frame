@@ -77,7 +77,7 @@ void cancelCountdown() {
 				hs = vc.homescreenWallpaperView;
 				both = vc.sharedWallpaperView;
 			}
-			else if (%c(SBWallpaperController)) {
+			else if (%c(SBWallpaperViewController)) {
 				// iOS 14.x
 				SBWallpaperViewController *vc = MSHookIvar<SBWallpaperViewController *>(ctr, "_wallpaperViewController");
 				ls = vc.lockscreenWallpaperView;
@@ -104,43 +104,49 @@ void cancelCountdown() {
 
 	%hook SBFWallpaperView
 
-		- (void) willMoveToWindow: (UIWindow *) window {
+		- (void) didMoveToWindow {
 			%orig;
-			// Setup wallpaper player.
-			// Only do this for coversheet window, which is not covered by the SBWallpaperController hook.
-			if ([window isKindOfClass: [%c(SBCoverSheetWindow) class]]) {
-				setupWallpaperPlayer(self, true);
+			// SpringBoard creates additional wallpaper-view instances during transitions.
+			// Use the system variant identifier instead of assuming every coversheet view is lockscreen.
+			NSString *variant = nil;
+			if ([self respondsToSelector: @selector(variantCacheIdentifier)]) {
+			    variant = self.variantCacheIdentifier;
 			}
+			if ([variant isEqualToString: @"home"])
+				setupWallpaperPlayer(self, false);
+			else if ([variant isEqualToString: @"lock"])
+				setupWallpaperPlayer(self, true);
+			else if (self.window && [self.window isKindOfClass: [%c(SBCoverSheetWindow) class]])
+				setupWallpaperPlayer(self, true);
+			adjustWallpaperPlayer(self);
 		}
 
 		- (void) layoutSubviews {
 			%orig;
-			if (!self.window || ![self.window isKindOfClass: [%c(SBCoverSheetWindow) class]]) return;
-
-			// Send playerLayer to front and match its frame to that of the current view.
-			// Note: for compatibility with SpringArtwork, we let SAViewController's view's layer stay atop :)
 			AVPlayerLayer *playerLayer = objc_getAssociatedObject(self, &playerLayerKey);
+			if (!playerLayer) return;
 
-			// Remove playerLayer from its current superlayer.
+			// Keep the video filling the view after rotation/resize, without animation.
+			[CATransaction begin];
+			[CATransaction setDisableActions: YES];
+			playerLayer.frame = self.bounds;
+			[CATransaction commit];
+
+			// Only coversheet needs the special layer ordering for SpringArtwork.
+			if (!self.window || ![self.window isKindOfClass: [%c(SBCoverSheetWindow) class]]) return;
 			[playerLayer removeFromSuperlayer];
 
-			// Find SAViewController's view's layer.
-			CALayer *saLayer;
+			CALayer *saLayer = nil;
 			for (UIView *view in self.subviews) {
 				if ([view.nextResponder isKindOfClass: [%c(SAViewController) class]]) {
 					saLayer = view.layer;
 					break;
 				}
 			}
-			
-			// Re-add playerLayer.
 			if (saLayer != nil)
 				[self.layer insertSublayer: playerLayer below: saLayer];
 			else
 				[self.layer addSublayer: playerLayer];
-			
-			// Adjust playerLayer to fit the wallpaperView.
-			playerLayer.frame = self.bounds;
 		}
 	
 	%end
