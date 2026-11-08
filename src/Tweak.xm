@@ -89,15 +89,15 @@ void cancelCountdown() {
 			else {
 				// Legacy iOS 13 fallback. Check the API before accessing it.
 					NSLog(@"[Frame] Using legacy wallpaper controller branch");
-				if ([ctr respondsToSelector: @selector(lockscreenWallpaperView)] &&
-				    [ctr respondsToSelector: @selector(homescreenWallpaperView)] &&
-				    [ctr respondsToSelector: @selector(sharedWallpaperView)]) {
+				if ([(id)ctr respondsToSelector: @selector(lockscreenWallpaperView)] &&
+				    [(id)ctr respondsToSelector: @selector(homescreenWallpaperView)] &&
+				    [(id)ctr respondsToSelector: @selector(sharedWallpaperView)]) {
 				    ls = ctr.lockscreenWallpaperView;
 				    hs = ctr.homescreenWallpaperView;
 				    both = ctr.sharedWallpaperView;
 				}
 				else {
-				    NSLog(@"[Frame] Legacy wallpaper controller API unavailable: %@", NSStringFromClass([ctr class]));
+				    NSLog(@"[Frame] Legacy wallpaper controller API unavailable: %@", NSStringFromClass([(id)ctr class]));
 				}
 			}
 			// We don't need to ensure singular call as the setup function checks if the provided view has been configured.
