@@ -90,13 +90,15 @@ jobs:
 
           ldid -Sframeapp-src/FrameApp/FrameApp_.entitlements \
             "layout/var/jb/Applications/FrameApp.app/$EXECUTABLE"
+          
       - name: Checkout Theos
         uses: actions/checkout@v4
         with:
           repository: theos/theos
           ref: 8167f59de02fd32cf45b16bfcb1330dfa5c9974c
           path: theos
-
+          submodules: recursive
+          
       - name: Checkout iOS SDKs
         uses: actions/checkout@v4
         with:
