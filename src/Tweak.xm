@@ -71,6 +71,7 @@ void cancelCountdown() {
 			// Obtain wallpaper views.
 			SBFWallpaperView *ls, *hs, *both;
 			if (%c(SBWWallpaperViewController)) {
+				NSLog(@"[Frame] Using SBWWallpaperViewController branch");
 				// iOS 15.x
 				SBWWallpaperViewController *vc = MSHookIvar<SBWWallpaperViewController *>(ctr, "_wallpaperViewController");
 				ls = vc.lockscreenWallpaperView;
@@ -78,6 +79,7 @@ void cancelCountdown() {
 				both = vc.sharedWallpaperView;
 			}
 			else if (%c(SBWallpaperViewController)) {
+				NSLog(@"[Frame] Using SBWallpaperViewController branch");
 				// iOS 14.x
 				SBWallpaperViewController *vc = MSHookIvar<SBWallpaperViewController *>(ctr, "_wallpaperViewController");
 				ls = vc.lockscreenWallpaperView;
@@ -85,10 +87,18 @@ void cancelCountdown() {
 				both = vc.sharedWallpaperView;
 			}
 			else {
-				// iOS 13.x
-				ls = ctr.lockscreenWallpaperView;
-				hs = ctr.homescreenWallpaperView;
-				both = ctr.sharedWallpaperView;
+				// Legacy iOS 13 fallback. Check the API before accessing it.
+					NSLog(@"[Frame] Using legacy wallpaper controller branch");
+				if ([ctr respondsToSelector: @selector(lockscreenWallpaperView)] &&
+				    [ctr respondsToSelector: @selector(homescreenWallpaperView)] &&
+				    [ctr respondsToSelector: @selector(sharedWallpaperView)]) {
+				    ls = ctr.lockscreenWallpaperView;
+				    hs = ctr.homescreenWallpaperView;
+				    both = ctr.sharedWallpaperView;
+				}
+				else {
+				    NSLog(@"[Frame] Legacy wallpaper controller API unavailable: %@", NSStringFromClass([ctr class]));
+				}
 			}
 			// We don't need to ensure singular call as the setup function checks if the provided view has been configured.
 			if (ls != nil && hs != nil) {
