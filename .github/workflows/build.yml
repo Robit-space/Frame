@@ -80,10 +80,10 @@ jobs:
           test -n "$EXECUTABLE"
           test -f "$APP/$EXECUTABLE"
 
-          rm -rf layout/var/jb/Applications/FrameApp.app
-          mkdir -p layout/var/jb/Applications
+          rm -rf layout/Applications/FrameApp.app
+          mkdir -p layout/Applications
 
-          ditto "$APP" layout/var/jb/Applications/FrameApp.app
+          ditto "$APP" layout/Applications/FrameApp.app
 
           rm -rf layout/var/jb/Applications/FrameApp.app/_CodeSignature
           rm -f layout/var/jb/Applications/FrameApp.app/embedded.mobileprovision
