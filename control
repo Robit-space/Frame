@@ -1,4 +1,4 @@
-Package: com.zx02.frame.rootless
+Package: com.zx02.frame
 Name: Frame (Rootless iOS 14+)
 Architecture: iphoneos-arm64
 Depends: mobilesubstrate,firmware (>= 13.9.9)
