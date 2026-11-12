@@ -85,11 +85,11 @@ jobs:
 
           ditto "$APP" layout/Applications/FrameApp.app
 
-          rm -rf layout/var/jb/Applications/FrameApp.app/_CodeSignature
-          rm -f layout/var/jb/Applications/FrameApp.app/embedded.mobileprovision
+          rm -rf layout/Applications/FrameApp.app/_CodeSignature
+          rm -f layout/Applications/FrameApp.app/embedded.mobileprovision
 
           ldid -Sframeapp-src/FrameApp/FrameApp_.entitlements \
-            "layout/var/jb/Applications/FrameApp.app/$EXECUTABLE"
+            "layout/Applications/FrameApp.app/$EXECUTABLE"
           
       - name: Checkout Theos
         uses: actions/checkout@v4
