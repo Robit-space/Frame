@@ -80,6 +80,10 @@ jobs:
           test -n "$EXECUTABLE"
           test -f "$APP/$EXECUTABLE"
 
+          # 清理旧版错误的 rootless 目录，防止重复打包
+          rm -rf layout/var/jb
+
+          # 清理旧 App，准备放入新编译的版本
           rm -rf layout/Applications/FrameApp.app
           mkdir -p layout/Applications
 
@@ -141,8 +145,25 @@ jobs:
 
       - name: Verify package
         run: |
-          find packages -name "*.deb" -type f
-          test -n "$(find packages -name '*.deb' -type f)"
+          DEB="$(find packages -name '*.deb' -type f | head -n 1)"
+
+          test -n "$DEB"
+
+          echo "===== Package contents ====="
+          dpkg-deb -c "$DEB"
+
+          CONTENTS="$(dpkg-deb -c "$DEB")"
+
+          # 必须存在正确的 App 路径
+          echo "$CONTENTS" | grep -q 'var/jb/Applications/FrameApp.app/Info.plist'
+
+          # 不允许重复嵌套 rootless 路径
+          if echo "$CONTENTS" | grep -q 'var/jb/var/jb/'; then
+            echo "ERROR: Duplicate rootless path detected!"
+            exit 1
+          fi
+
+          echo "Package path verification passed."
 
       - name: Upload DEB
         uses: actions/upload-artifact@v4
