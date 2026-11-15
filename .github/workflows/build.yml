@@ -88,9 +88,29 @@ jobs:
           rm -rf layout/Applications/FrameApp.app/_CodeSignature
           rm -f layout/Applications/FrameApp.app/embedded.mobileprovision
 
+          APP="layout/Applications/FrameApp.app"
+
+          # 检查 Nuke.framework 是否存在
+          test -f "$APP/Frameworks/Nuke.framework/Nuke"
+
+          # 对 App 内所有 Framework Mach-O 文件进行签名
+          if [ -d "$APP/Frameworks" ]; then
+            find "$APP/Frameworks" -type f -print0 |
+            while IFS= read -r -d '' BIN; do
+              if file "$BIN" | grep -q 'Mach-O'; then
+                echo "Signing: $BIN"
+                ldid -S "$BIN"
+              fi
+            done
+          fi
+
+          # 主程序保留原有 entitlements
           ldid -Sframeapp-src/FrameApp/FrameApp_.entitlements \
-            "layout/Applications/FrameApp.app/$EXECUTABLE"
-          
+            "$APP/$EXECUTABLE"
+
+          # 检查 Nuke 签名
+          ldid -e "$APP/Frameworks/Nuke.framework/Nuke"
+
       - name: Checkout Theos
         uses: actions/checkout@v4
         with:
