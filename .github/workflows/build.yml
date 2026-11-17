@@ -34,6 +34,16 @@ jobs:
           base64 -D -i ../ci/frameapp.patch.b64 -o "$RUNNER_TEMP/frameapp.patch"
           git apply "$RUNNER_TEMP/frameapp.patch"
           test -f Frame.xcworkspace/contents.xcworkspacedata
+      
+      - name: Locate Process launch code
+        working-directory: frameapp-src
+        run: |
+          echo "===== FrameInfoModel / runCommandInPath ====="
+          grep -RIn -C 12 \
+            --include='*.swift' \
+            --include='*.m' \
+            --include='*.mm' \
+            -E 'runCommandInPath|FrameInfoModel|Process\(' . || true
 
       - name: Fix FrameApp CocoaPods target
         working-directory: frameapp-src
